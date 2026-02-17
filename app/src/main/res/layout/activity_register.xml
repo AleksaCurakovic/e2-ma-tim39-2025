@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#BB86FC"
+    tools:context=".presentation.activities.RegisterActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/registerContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="24dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintWidth_max="420dp">
+
+        <!-- TITLE -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kreiraj Nalog"
+            android:textColor="@android:color/black"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="8dp" />
+
+        <!-- SUBTITLE -->
+        <TextView
+            android:id="@+id/subtitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Popuni podatke za registraciju"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintTop_toBottomOf="@id/titleText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="32dp" />
+
+        <!-- EMAIL INPUT -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/emailInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            app:boxBackgroundMode="outline"
+            app:layout_constraintTop_toBottomOf="@id/subtitleText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/emailInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:inputType="textEmailAddress"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- USERNAME INPUT -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/usernameInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Korisničko ime"
+            app:boxBackgroundMode="outline"
+            app:layout_constraintTop_toBottomOf="@id/emailInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/usernameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- PASSWORD INPUT -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/passwordInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Šifra"
+            app:boxBackgroundMode="outline"
+            app:endIconMode="password_toggle"
+            app:layout_constraintTop_toBottomOf="@id/usernameInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/passwordInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:inputType="textPassword"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- CONFIRM PASSWORD INPUT -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/confirmPasswordInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Potvrdi šifru"
+            app:boxBackgroundMode="outline"
+            app:endIconMode="password_toggle"
+            app:layout_constraintTop_toBottomOf="@id/passwordInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/confirmPasswordInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:inputType="textPassword"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- AVATAR LABEL -->
+        <TextView
+            android:id="@+id/avatarLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Izaberi avatara:"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/confirmPasswordInputLayout" />
+
+        <!-- AVATAR CONTAINER -->
+        <LinearLayout
+            android:id="@+id/avatarContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"
+            app:layout_constraintTop_toBottomOf="@id/avatarLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:id="@+id/avatar1"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_margin="8dp"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/skeleton"
+                android:background="@drawable/avatar_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Avatar 1" />
+
+            <ImageView
+                android:id="@+id/avatar2"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_margin="8dp"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/elf"
+                android:background="@drawable/avatar_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Avatar 2" />
+
+            <ImageView
+                android:id="@+id/avatar3"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_margin="8dp"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/death"
+                android:background="@drawable/avatar_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Avatar 3" />
+
+            <ImageView
+                android:id="@+id/avatar4"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_margin="8dp"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/horns"
+                android:background="@drawable/avatar_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Avatar 4" />
+
+            <ImageView
+                android:id="@+id/avatar5"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_margin="8dp"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/wizard"
+                android:background="@drawable/avatar_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Avatar 5" />
+
+        </LinearLayout>
+
+        <!-- REGISTER BUTTON -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/registerButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="Registruj se"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:onClick="registerUser"
+            app:cornerRadius="8dp"
+            app:layout_constraintTop_toBottomOf="@id/avatarContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp" />
+
+        <!-- PROGRESS BAR -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/registerButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp" />
+
+        <!-- LOGIN LINK -->
+        <TextView
+            android:id="@+id/loginLinkText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Već imaš nalog? "
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintTop_toBottomOf="@id/progressBar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/loginLink"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            android:layout_marginTop="24dp" />
+
+        <TextView
+            android:id="@+id/loginLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Prijavi se"
+            android:textSize="14sp"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:onClick="goToLogin"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp"
+            app:layout_constraintTop_toTopOf="@id/loginLinkText"
+            app:layout_constraintBottom_toBottomOf="@id/loginLinkText"
+            app:layout_constraintStart_toEndOf="@id/loginLinkText"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

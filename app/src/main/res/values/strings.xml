@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">myapp</string>
+    <string name="register_holder">Register</string>
+    <string name="confirm_password_holder">Confirm Password</string>
+    <string name="password_holder">Password</string>
+    <string name="email_holder">Email</string>
+</resources>
