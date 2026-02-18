@@ -296,11 +296,14 @@ public class LocalDataSource {
     public List<Task> getActiveTasksForUser(String userUid) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         List<Task> tasks = new ArrayList<>();
+        long now = System.currentTimeMillis();
         Cursor cursor = db.query(DatabaseHelper.TABLE_TASKS, null,
                 DatabaseHelper.COLUMN_TASK_USER_UID + "=? AND (" +
                         DatabaseHelper.COLUMN_TASK_STATUS + "=? OR " +
-                        DatabaseHelper.COLUMN_TASK_STATUS + "=?)",
-                new String[]{userUid, Task.STATUS_ACTIVE, Task.STATUS_PAUSED},
+                        DatabaseHelper.COLUMN_TASK_STATUS + "=?) AND " +
+                        DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " >= ?",
+                new String[]{userUid, Task.STATUS_ACTIVE, Task.STATUS_PAUSED,
+                        String.valueOf(now)},
                 null, null, DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " ASC");
         if (cursor != null) {
             while (cursor.moveToNext()) tasks.add(cursorToTask(cursor));

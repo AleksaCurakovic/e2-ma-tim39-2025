@@ -370,6 +370,9 @@ public class TaskRepository {
                 callback.onFailure(new Exception("TASK_NOT_PAUSED"));
             return;
         }
+        long originalInterval = task.getRepeatEndDate() - task.getScheduledTime();
+        long newScheduledTime = System.currentTimeMillis() + originalInterval;
+        task.setScheduledTime(newScheduledTime);
         task.setStatus(Task.STATUS_ACTIVE);
         localDataSource.updateTaskStatus(task.getId(), Task.STATUS_ACTIVE);
         remoteDataSource.updateTaskStatus(task.getId(), Task.STATUS_ACTIVE, new OnResult<Void>() {

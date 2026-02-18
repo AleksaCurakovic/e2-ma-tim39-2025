@@ -1,6 +1,7 @@
 package com.example.myapp.presentation.viewmodels;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -28,6 +29,8 @@ public class TaskViewModel extends ViewModel {
     public MutableLiveData<String>         errorMessage   = new MutableLiveData<>();
     public MutableLiveData<String>         successMessage = new MutableLiveData<>();
     public MutableLiveData<Integer>        xpEarned       = new MutableLiveData<>();
+
+    public MutableLiveData<UserRepository.LevelUpResult> levelUpOccurred = new MutableLiveData<>();
 
     public TaskViewModel(Context context) {
         taskRepository     = new TaskRepository(context);
@@ -205,7 +208,31 @@ public class TaskViewModel extends ViewModel {
         User user = userRepository.getUserLocally(userUid);
         if (user != null) {
             user.setXp(user.getXp() + xp);
-            userRepository.updateUser(user, null);
+            userRepository.updateUser(user, new OnResult<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Log.d("TaskViewModel", "XP updated: +" + xp);
+                    userRepository.checkAndApplyLevelUp(userUid,
+                            new OnResult<UserRepository.LevelUpResult>() {
+                                @Override
+                                public void onSuccess(UserRepository.LevelUpResult result) {
+                                    if (result.leveledUp) {
+                                        levelUpOccurred.postValue(result);
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Log.e("TaskViewModel", "Level up check failed", e);
+                                }
+                            });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.e("TaskViewModel", "Failed to update XP", e);
+                }
+            });
         }
     }
 }

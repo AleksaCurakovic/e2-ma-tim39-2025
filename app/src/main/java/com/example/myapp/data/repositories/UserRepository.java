@@ -7,6 +7,7 @@ import com.example.myapp.data.datasource.local.LocalDataSource;
 import com.example.myapp.data.datasource.remote.OnResult;
 import com.example.myapp.data.datasource.remote.RemoteDataSource;
 import com.example.myapp.domain.models.User;
+import com.example.myapp.domain.utils.LevelManager;
 
 public class UserRepository {
 
@@ -136,5 +137,70 @@ public class UserRepository {
     public void clearLocalData() {
         localDataSource.clearAllUsers();
         Log.d(TAG, "Local data cleared");
+    }
+
+    // ─────────────────────────────────────────
+    // LEVEL UP LOGIKA
+    // Prebačeno iz LevelRepository
+    // Može se desiti više level upova odjednom
+    // PP nagrada se daje samo kad korisnik porazi bosa (Celina 5)
+    // Ovde samo ažuriramo nivo i titulu
+    // ─────────────────────────────────────────
+
+    public void checkAndApplyLevelUp(String userUid, OnResult<LevelUpResult> callback) {
+        User user = localDataSource.getUser(userUid);
+        if (user == null) {
+            if (callback != null)
+                callback.onFailure(new Exception("USER_NOT_FOUND"));
+            return;
+        }
+
+        int newLevel = LevelManager.checkLevelUp(user.getXp(), user.getLevel());
+        if (newLevel == -1) {
+            if (callback != null)
+                callback.onSuccess(new LevelUpResult(false, user.getLevel(), 0));
+            return;
+        }
+
+        // Može biti više level upova odjednom
+        int currentLevel = user.getLevel();
+        while (LevelManager.checkLevelUp(user.getXp(), currentLevel) != -1) {
+            currentLevel++;
+            Log.d(TAG, "Level up to: " + currentLevel);
+        }
+
+        String title = LevelManager.titleForLevel(currentLevel);
+        user.setLevel(currentLevel);
+        user.setTitle(title);
+
+        final int finalLevel = currentLevel;
+
+        updateUser(user, new OnResult<Void>() {
+            @Override public void onSuccess(Void result) {
+                Log.d(TAG, "Level up saved! Level: " + finalLevel);
+                if (callback != null)
+                    callback.onSuccess(new LevelUpResult(true, finalLevel, 0));
+            }
+            @Override public void onFailure(Exception e) {
+                Log.e(TAG, "Failed to save level up", e);
+                if (callback != null) callback.onFailure(e);
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // LEVEL UP RESULT MODEL
+    // ─────────────────────────────────────────
+
+    public static class LevelUpResult {
+        public final boolean leveledUp;
+        public final int newLevel;
+        public final int ppReward;
+
+        public LevelUpResult(boolean leveledUp, int newLevel, int ppReward) {
+            this.leveledUp = leveledUp;
+            this.newLevel  = newLevel;
+            this.ppReward  = ppReward;
+        }
     }
 }
