@@ -50,4 +50,5 @@ dependencies {
     implementation libs.firebase.firestore
     implementation libs.androidmads.qrgenerator
     implementation libs.mpandroidchart
+    implementation libs.material.calendarview
 }

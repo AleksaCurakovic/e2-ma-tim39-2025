@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class AuthManager {
 
@@ -37,7 +38,7 @@ public class AuthManager {
                         sendVerificationEmail(firebaseUser);
 
                         User user = new User(
-                                firebaseUser.getUid(),
+                                UUID.randomUUID().toString(),
                                 email,
                                 username,
                                 avatar,

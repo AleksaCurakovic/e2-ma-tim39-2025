@@ -10,15 +10,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.example.myapp.R;
 import com.example.myapp.domain.services.AuthManager;
+import com.example.myapp.presentation.fragments.CategoryFragment;
+import com.example.myapp.presentation.fragments.ProfileFragment;
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
     private AuthManager authManager;
+
+    private TabLayout tabLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +37,41 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         authManager = new AuthManager(getApplicationContext());
+        tabLayout = findViewById(R.id.tabLayout);
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+
+                Fragment fragment = null;
+
+                switch (tab.getPosition()) {
+                    case 0:
+                        //fragment = new HomeFragment();
+                        break;
+
+                    case 1:
+                        fragment = new ProfileFragment();
+                        break;
+
+                    case 2:
+                        fragment = new CategoryFragment();
+                        break;
+
+                    case 3:
+                        //fragment = new TasksFragment();
+                        break;
+                }
+
+                if (fragment != null) {
+                    replaceFragment(fragment);
+                }
+            }
+
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override public void onTabReselected(TabLayout.Tab tab) {}
+        });
     }
 
     @Override
@@ -48,5 +89,12 @@ public class MainActivity extends AppCompatActivity {
         authManager.logout();
         startActivity(new Intent(this, LoginActivity.class));
         finish();
+    }
+
+    private void replaceFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit();
     }
 }

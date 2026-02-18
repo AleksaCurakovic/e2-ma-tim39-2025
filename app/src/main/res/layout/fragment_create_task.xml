@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/etTaskTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Naziv zadatka *"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/etTaskDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Opis (opciono)"
+            android:minLines="2"
+            android:gravity="top"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kategorija"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Težina"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerDifficulty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bitnost"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerImportance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vreme izvršenja *"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <Button
+            android:id="@+id/btnScheduledTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Odaberi vreme"/>
+
+        <TextView
+            android:id="@+id/tvScheduledTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#888"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Učestalost"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgRepeat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <RadioButton
+                android:id="@+id/rbOneTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jednokratno"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbRepeating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ponavljajuće"/>
+        </RadioGroup>
+
+        <!-- Opcije ponavljanja -->
+        <LinearLayout
+            android:id="@+id/layoutRepeatOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Svakih "
+                    android:layout_marginEnd="8dp"/>
+
+                <EditText
+                    android:id="@+id/etRepeatInterval"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="1"
+                    android:layout_marginEnd="8dp"/>
+
+                <RadioGroup
+                    android:id="@+id/rgRepeatUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbDaily"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="dan"
+                        android:checked="true"/>
+
+                    <RadioButton
+                        android:id="@+id/rbWeekly"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="nedelja"/>
+                </RadioGroup>
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnRepeatStart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Datum početka ponavljanja"/>
+
+            <TextView
+                android:id="@+id/tvRepeatStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#888"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnRepeatEnd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Datum kraja ponavljanja (opciono)"/>
+
+            <TextView
+                android:id="@+id/tvRepeatEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#888"
+                android:layout_marginBottom="8dp"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSaveTask"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sačuvaj zadatak"
+            android:layout_marginTop="8dp"/>
+
+    </LinearLayout>
+</ScrollView>

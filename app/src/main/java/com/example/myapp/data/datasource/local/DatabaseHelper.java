@@ -44,6 +44,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CATEGORY_NAME = "name";
     public static final String COLUMN_CATEGORY_COLOR = "color";
 
+    // ─── TASKS kolone ───
+    public static final String TABLE_TASKS = "tasks";
+    public static final String COLUMN_TASK_ID = "id";
+    public static final String COLUMN_TASK_USER_UID = "user_uid";
+    public static final String COLUMN_TASK_TITLE = "title";
+    public static final String COLUMN_TASK_DESCRIPTION = "description";
+    public static final String COLUMN_TASK_CATEGORY_ID = "category_id";
+    public static final String COLUMN_TASK_STATUS = "status";
+    public static final String COLUMN_TASK_DIFFICULTY = "difficulty";
+    public static final String COLUMN_TASK_IMPORTANCE = "importance";
+    public static final String COLUMN_TASK_XP_VALUE = "xp_value";
+    public static final String COLUMN_TASK_SCHEDULED_TIME = "scheduled_time";
+    public static final String COLUMN_TASK_CREATED_AT = "created_at";
+    public static final String COLUMN_TASK_REPEAT_TYPE  = "repeat_type";
+    public static final String COLUMN_TASK_REPEAT_INTERVAL = "repeat_interval";
+    public static final String COLUMN_TASK_REPEAT_START = "repeat_start";
+    public static final String COLUMN_TASK_REPEAT_END = "repeat_end";
+    public static final String COLUMN_TASK_PARENT_ID  = "parent_task_id";
+    public static final String COLUMN_TASK_RECURRENCE_GROUP = "recurrence_group_id";
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -54,6 +74,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         createUsersTable(db);
+        createCategoryTable(db);
+        createTaskTable(db);
         Log.d(TAG, "Database created - version: " + DATABASE_VERSION);
     }
 
@@ -85,6 +107,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         ")";
         db.execSQL(sql);
         Log.d(TAG, "Table created: " + TABLE_USERS);
+    }
+
+    private void createCategoryTable(SQLiteDatabase db){
+//        String sql;
+//
+//        db.execSQL(sql);
+        Log.d(TAG, "Table created: " + TABLE_CATEGORIES);
+    }
+
+    private void createTaskTable(SQLiteDatabase db){
+        String sql =
+                "CREATE TABLE " + TABLE_TASKS + " (" +
+                        COLUMN_TASK_ID               + " TEXT PRIMARY KEY, " +
+                        COLUMN_TASK_USER_UID         + " TEXT NOT NULL, " +
+                        COLUMN_TASK_TITLE            + " TEXT NOT NULL, " +
+                        COLUMN_TASK_DESCRIPTION      + " TEXT, " +
+                        COLUMN_TASK_CATEGORY_ID      + " TEXT, " +
+                        COLUMN_TASK_STATUS           + " TEXT NOT NULL DEFAULT 'active', " +
+                        COLUMN_TASK_DIFFICULTY       + " TEXT NOT NULL, " +
+                        COLUMN_TASK_IMPORTANCE       + " TEXT NOT NULL, " +
+                        COLUMN_TASK_XP_VALUE         + " INTEGER DEFAULT 0, " +
+                        COLUMN_TASK_SCHEDULED_TIME   + " INTEGER NOT NULL, " +
+                        COLUMN_TASK_CREATED_AT       + " INTEGER NOT NULL, " +
+                        COLUMN_TASK_REPEAT_TYPE      + " TEXT DEFAULT 'none', " +
+                        COLUMN_TASK_REPEAT_INTERVAL  + " INTEGER DEFAULT 1, " +
+                        COLUMN_TASK_REPEAT_START     + " INTEGER DEFAULT 0, " +
+                        COLUMN_TASK_REPEAT_END       + " INTEGER DEFAULT 0, " +
+                        COLUMN_TASK_PARENT_ID        + " TEXT, " +
+                        COLUMN_TASK_RECURRENCE_GROUP + " TEXT" +
+                        ")";
+        db.execSQL(sql);
+        Log.d(TAG, "Table created: " + TABLE_TASKS);
     }
 
 }

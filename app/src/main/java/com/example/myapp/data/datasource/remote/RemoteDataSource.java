@@ -2,11 +2,16 @@ package com.example.myapp.data.datasource.remote;
 
 import android.util.Log;
 
+import com.example.myapp.domain.models.Task;
 import com.example.myapp.domain.models.User;
+import com.example.myapp.domain.models.Category;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RemoteDataSource {
@@ -16,8 +21,9 @@ public class RemoteDataSource {
     // Firestore kolekcije
     private static final String COLLECTION_USERS = "users";
     private static final String COLLECTION_CATEGORIES = "categories";
-    // private static final String COLLECTION_BADGES = "badges";
-    // private static final String COLLECTION_EQUIPMENT = "equipment";
+
+    private static final String COLLECTION_TASKS = "tasks";
+
 
     // Firestore polja - User
     private static final String FIELD_EMAIL = "email";
@@ -29,6 +35,7 @@ public class RemoteDataSource {
     private static final String FIELD_XP = "xp";
     private static final String FIELD_COINS = "coins";
     private static final String FIELD_BADGES = "badges";
+    private static final String FIELD_EQUIPPED_ITEMS = "equipped_items";
 
     // ─────────────────────────────────────────
     // POLJA — CATEGORY
@@ -36,6 +43,26 @@ public class RemoteDataSource {
     private static final String FIELD_CATEGORY_NAME = "name";
     private static final String FIELD_CATEGORY_COLOR = "color";
     private static final String FIELD_CATEGORY_USER_UID = "userUid";
+
+    // ─────────────────────────────────────────
+    // POLJA — ZADATAK
+    // ─────────────────────────────────────────
+    private static final String FIELD_TASK_USER_UID = "user_uid";
+    private static final String FIELD_TASK_TITLE = "title";
+    private static final String FIELD_TASK_DESCRIPTION = "description";
+    private static final String FIELD_TASK_CATEGORY_ID = "category_id";
+    private static final String FIELD_TASK_STATUS = "status";
+    private static final String FIELD_TASK_DIFFICULTY = "difficulty";
+    private static final String FIELD_TASK_IMPORTANCE = "importance";
+    private static final String FIELD_TASK_XP_VALUE = "xp_value";
+    private static final String FIELD_TASK_SCHEDULED_TIME = "scheduled_time";
+    private static final String FIELD_TASK_CREATED_AT = "created_at";
+    private static final String FIELD_TASK_REPEAT_TYPE  = "repeat_type";
+    private static final String FIELD_TASK_REPEAT_INTERVAL = "repeat_interval";
+    private static final String FIELD_TASK_REPEAT_START = "repeat_start";
+    private static final String FIELD_TASK_REPEAT_END = "repeat_end";
+    private static final String FIELD_TASK_PARENT_ID  = "parent_task_id";
+    private static final String FIELD_TASK_RECURRENCE_GROUP = "recurrence_group_id";
 
 
     private final FirebaseFirestore firestore;
@@ -122,10 +149,301 @@ public class RemoteDataSource {
         map.put(FIELD_XP, user.getXp());
         map.put(FIELD_COINS, user.getCoins());
         map.put(FIELD_BADGES, user.getBadges() != null ? user.getBadges() : new ArrayList<>());
-        map.put("equippedItemIds", user.getEquippedItemIds() != null
+        map.put(FIELD_EQUIPPED_ITEMS, user.getEquippedItemIds() != null
                 ? user.getEquippedItemIds() : new ArrayList<>());
         return map;
     }
 
+    // ─────────────────────────────────────────
+    // CATEGORY OPERACIJE
+    // ─────────────────────────────────────────
+
+    public void saveCategory(Category category, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_CATEGORIES)
+                .document(category.getId())
+                .set(categoryToMap(category))
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Category saved to Firestore: " + category.getId());
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to save category to Firestore", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void getCategoriesForUser(String userUid, OnResult<List<Category>> callback) {
+        firestore.collection(COLLECTION_CATEGORIES)
+                .whereEqualTo(FIELD_CATEGORY_USER_UID, userUid)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Category> categories = new ArrayList<>();
+                    for (var doc : snapshot.getDocuments()) {
+                        Category category = new Category(
+                                doc.getId(),
+                                doc.getString(FIELD_CATEGORY_USER_UID),
+                                doc.getString(FIELD_CATEGORY_NAME),
+                                doc.getString(FIELD_CATEGORY_COLOR)
+                        );
+                        categories.add(category);
+                    }
+                    Log.d(TAG, "Fetched " + categories.size() + " categories for: " + userUid);
+                    if (callback != null) callback.onSuccess(categories);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to fetch categories", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void updateCategory(Category category, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_CATEGORIES)
+                .document(category.getId())
+                .update(categoryToMap(category))
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Category updated in Firestore: " + category.getId());
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update category in Firestore", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void deleteCategory(Category category, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_CATEGORIES)
+                .document(category.getId())
+                .delete()
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Category deleted from Firestore: " + category.getId());
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to delete category from Firestore", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    private Map<String, Object> categoryToMap(Category category) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(FIELD_CATEGORY_USER_UID, category.getUserUid());
+        map.put(FIELD_CATEGORY_NAME,     category.getName());
+        map.put(FIELD_CATEGORY_COLOR,    category.getColor());
+        return map;
+    }
+
+    // ─────────────────────────────────────────
+    // ZADATAK OPERACIJE
+    // ─────────────────────────────────────────
+    public void saveTask(Task task, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .document(task.getId())
+                .set(taskToMap(task))
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Task saved to Firestore: " + task.getId());
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to save task", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void saveTasksBatch(List<Task> tasks, OnResult<Void> callback) {
+        WriteBatch batch = firestore.batch();
+        for (Task task : tasks) {
+            batch.set(firestore.collection(COLLECTION_TASKS)
+                    .document(task.getId()), taskToMap(task));
+        }
+        batch.commit()
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Batch saved " + tasks.size() + " tasks");
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Batch save failed", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void getTasksForUser(String userUid, OnResult<List<Task>> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .whereEqualTo("userUid", userUid)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Task> tasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Task t = documentToTask(doc);
+                        if (t != null) tasks.add(t);
+                    }
+                    Log.d(TAG, "Fetched " + tasks.size() + " tasks for: " + userUid);
+                    if (callback != null) callback.onSuccess(tasks);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to fetch tasks", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void updateTask(Task task, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .document(task.getId())
+                .update(taskToMap(task))
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Task updated: " + task.getId());
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update task", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void updateTaskStatus(String taskId, String status, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .document(taskId)
+                .update("status", status)
+                .addOnSuccessListener(v -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void deleteTask(String taskId, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .document(taskId)
+                .delete()
+                .addOnSuccessListener(v -> {
+                    Log.d(TAG, "Task deleted: " + taskId);
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to delete task", e);
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void deleteFutureRecurringTasks(String userUid, String groupId,
+                                           long fromTime, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .whereEqualTo("userUid", userUid)
+                .whereEqualTo("recurrenceGroupId", groupId)
+                .whereGreaterThanOrEqualTo("scheduledTime", fromTime)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    WriteBatch batch = firestore.batch();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String status = doc.getString("status");
+                        if (Task.STATUS_ACTIVE.equals(status)
+                                || Task.STATUS_PAUSED.equals(status)) {
+                            batch.delete(doc.getReference());
+                        }
+                    }
+                    batch.commit()
+                            .addOnSuccessListener(v -> {
+                                if (callback != null) callback.onSuccess(null);
+                            })
+                            .addOnFailureListener(e -> {
+                                if (callback != null) callback.onFailure(e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void updateFutureRecurringTasks(String userUid, String groupId,
+                                           Task changes, long fromTime,
+                                           OnResult<Void> callback) {
+        firestore.collection(COLLECTION_TASKS)
+                .whereEqualTo(FIELD_TASK_USER_UID, userUid)
+                .whereEqualTo(FIELD_TASK_RECURRENCE_GROUP, groupId)
+                .whereGreaterThanOrEqualTo(FIELD_TASK_SCHEDULED_TIME, fromTime)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    WriteBatch batch = firestore.batch();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String status = doc.getString(FIELD_TASK_STATUS);
+                        // Samo editable taskove menjamo
+                        if (Task.STATUS_ACTIVE.equals(status)
+                                || Task.STATUS_PAUSED.equals(status)) {
+                            batch.update(doc.getReference(), FIELD_TASK_TITLE,       changes.getTitle());
+                            batch.update(doc.getReference(), FIELD_TASK_DESCRIPTION,  changes.getDescription());
+                            batch.update(doc.getReference(), FIELD_TASK_DIFFICULTY,   changes.getDifficulty());
+                            batch.update(doc.getReference(), FIELD_TASK_IMPORTANCE,   changes.getImportance());
+                            batch.update(doc.getReference(),  FIELD_TASK_XP_VALUE     ,changes.getXpValue());
+                        }
+                    }
+                    batch.commit()
+                            .addOnSuccessListener(v -> {
+                                if (callback != null) callback.onSuccess(null);
+                            })
+                            .addOnFailureListener(e -> {
+                                if (callback != null) callback.onFailure(e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+// ─── Task helpers ───
+
+    private Map<String, Object> taskToMap(Task task) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(FIELD_TASK_USER_UID, task.getUserUid());
+        map.put(FIELD_TASK_TITLE, task.getTitle());
+        map.put(FIELD_TASK_DESCRIPTION, task.getDescription());
+        map.put(FIELD_TASK_CATEGORY_ID, task.getCategoryId());
+        map.put(FIELD_TASK_STATUS, task.getStatus());
+        map.put(FIELD_TASK_DIFFICULTY, task.getDifficulty());
+        map.put(FIELD_TASK_IMPORTANCE, task.getImportance());
+        map.put(FIELD_TASK_XP_VALUE, task.getXpValue());
+        map.put(FIELD_TASK_SCHEDULED_TIME, task.getScheduledTime());
+        map.put(FIELD_TASK_CREATED_AT, task.getCreatedAt());
+        map.put(FIELD_TASK_REPEAT_TYPE, task.getRepeatType());
+        map.put(FIELD_TASK_REPEAT_INTERVAL, task.getRepeatInterval());
+        map.put(FIELD_TASK_REPEAT_START, task.getRepeatStartDate());
+        map.put(FIELD_TASK_REPEAT_END, task.getRepeatEndDate());
+        map.put(FIELD_TASK_PARENT_ID, task.getParentTaskId());
+        map.put(FIELD_TASK_RECURRENCE_GROUP, task.getRecurrenceGroupId());
+        return map;
+    }
+
+
+    private Task documentToTask(DocumentSnapshot doc) {
+        try {
+            return new Task(
+                    doc.getId(),
+                    doc.getString(FIELD_TASK_USER_UID),
+                    doc.getString(FIELD_TASK_TITLE),
+                    doc.getString(FIELD_TASK_DESCRIPTION),
+                    doc.getString(FIELD_TASK_CATEGORY_ID),
+                    doc.getString(FIELD_TASK_STATUS),
+                    doc.getString(FIELD_TASK_DIFFICULTY),
+                    doc.getString(FIELD_TASK_IMPORTANCE),
+                    doc.getLong(FIELD_TASK_XP_VALUE) != null
+                            ? doc.getLong(FIELD_TASK_XP_VALUE).intValue() : 0,
+                    doc.getLong(FIELD_TASK_SCHEDULED_TIME) != null
+                            ? doc.getLong(FIELD_TASK_SCHEDULED_TIME) : 0,
+                    doc.getLong(FIELD_TASK_CREATED_AT) != null
+                            ? doc.getLong(FIELD_TASK_CREATED_AT) : 0,
+                    doc.getString(FIELD_TASK_REPEAT_TYPE),
+                    doc.getLong(FIELD_TASK_REPEAT_INTERVAL) != null
+                            ? doc.getLong(FIELD_TASK_REPEAT_INTERVAL).intValue() : 1,
+                    doc.getLong(FIELD_TASK_REPEAT_START) != null
+                            ? doc.getLong(FIELD_TASK_REPEAT_START) : 0,
+                    doc.getLong(FIELD_TASK_REPEAT_END) != null
+                            ? doc.getLong(FIELD_TASK_REPEAT_END) : 0,
+                    doc.getString(FIELD_TASK_PARENT_ID),
+                    doc.getString(FIELD_TASK_RECURRENCE_GROUP)
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse task document: " + doc.getId(), e);
+            return null;
+        }
+    }
 
 }
