@@ -99,20 +99,6 @@ public class LocalDataSource {
         db.close();
     }
 
-    // ─────────────────────────────────────────
-    // KADA DODAS NOVU TABELU, DODAS OVDE SEKCIJU
-    // ─────────────────────────────────────────
-
-    // public void saveBadge(Badge badge) { ... }
-    // public Badge getBadge(String badgeId) { ... }
-
-    // public void saveEquipment(Equipment equipment) { ... }
-    // public Equipment getEquipment(String equipmentId) { ... }
-
-    // ─────────────────────────────────────────
-    // HELPER METODE
-    // ─────────────────────────────────────────
-
     private ContentValues userToContentValues(User user) {
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.COLUMN_UID, user.getUid());
@@ -131,20 +117,33 @@ public class LocalDataSource {
         }
         values.put(DatabaseHelper.COLUMN_BADGES, badgesString);
 
+        String equippedString = "";
+        if (user.getEquippedItemIds() != null && !user.getEquippedItemIds().isEmpty()) {
+            equippedString = String.join(",", user.getEquippedItemIds());
+        }
+        values.put(DatabaseHelper.COLUMN_EQUIPPED_ITEMS, equippedString);
+
         return values;
     }
 
+
+
     private User cursorToUser(Cursor cursor) {
         String badgesString = cursor.getString(
-                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BADGES)
-        );
-
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BADGES));
         List<String> badges = new ArrayList<>();
         if (badgesString != null && !badgesString.isEmpty()) {
             badges = new ArrayList<>(Arrays.asList(badgesString.split(",")));
         }
 
-        return new User(
+        String equippedString = cursor.getString(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_EQUIPPED_ITEMS));
+        List<String> equipped = new ArrayList<>();
+        if (equippedString != null && !equippedString.isEmpty()) {
+            equipped = new ArrayList<>(Arrays.asList(equippedString.split(",")));
+        }
+
+        User user = new User(
                 cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_UID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_EMAIL)),
                 cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USERNAME)),
@@ -156,5 +155,8 @@ public class LocalDataSource {
                 cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_COINS)),
                 badges
         );
+        user.setEquippedItemIds(equipped);
+        return user;
     }
+
 }

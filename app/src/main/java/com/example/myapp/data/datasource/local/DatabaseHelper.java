@@ -34,24 +34,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_XP = "xp";
     public static final String COLUMN_COINS = "coins";
     public static final String COLUMN_BADGES = "badges";
+    public static final String COLUMN_EQUIPPED_ITEMS = "equipped_items";
 
-    // ─────────────────────────────────────────
-    // TABELA: BADGES (primer buduće tabele)
-    // ─────────────────────────────────────────
-    // public static final String TABLE_BADGES = "badges";
-    // public static final String COLUMN_BADGE_ID = "badge_id";
-    // public static final String COLUMN_BADGE_NAME = "name";
-    // public static final String COLUMN_BADGE_DESCRIPTION = "description";
-    // public static final String COLUMN_BADGE_ICON = "icon";
 
-    // ─────────────────────────────────────────
-    // TABELA: EQUIPMENT (primer buduće tabele)
-    // ─────────────────────────────────────────
-    // public static final String TABLE_EQUIPMENT = "equipment";
-    // public static final String COLUMN_EQUIPMENT_ID = "equipment_id";
-    // public static final String COLUMN_EQUIPMENT_NAME = "name";
-    // public static final String COLUMN_EQUIPMENT_TYPE = "type";
-    // public static final String COLUMN_EQUIPMENT_POWER = "power";
+    //TABELA: CATEGORIES
+    public static final String TABLE_CATEGORIES = "categories";
+    public static final String COLUMN_CATEGORY_ID = "id";
+    public static final String COLUMN_CATEGORY_USER_UID = "user_uid";
+    public static final String COLUMN_CATEGORY_NAME = "name";
+    public static final String COLUMN_CATEGORY_COLOR = "color";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -63,8 +54,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         createUsersTable(db);
-        // createBadgesTable(db);
-        // createEquipmentTable(db);
         Log.d(TAG, "Database created - version: " + DATABASE_VERSION);
     }
 
@@ -80,22 +69,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // CREATE TABLE METODE
     // ─────────────────────────────────────────
     private void createUsersTable(SQLiteDatabase db) {
-        String CREATE_USERS_TABLE = "CREATE TABLE " + TABLE_USERS + "("
-                + COLUMN_UID + " TEXT PRIMARY KEY, "
-                + COLUMN_EMAIL + " TEXT NOT NULL, "
-                + COLUMN_USERNAME + " TEXT NOT NULL, "
-                + COLUMN_AVATAR + " TEXT, "
-                + COLUMN_LEVEL + " INTEGER DEFAULT 1, "
-                + COLUMN_TITLE + " TEXT, "
-                + COLUMN_POWER_POINTS + " INTEGER DEFAULT 0, "
-                + COLUMN_XP + " INTEGER DEFAULT 0, "
-                + COLUMN_COINS + " INTEGER DEFAULT 0, "
-                + COLUMN_BADGES + " TEXT"
-                + ")";
-        db.execSQL(CREATE_USERS_TABLE);
+        String sql =
+                "CREATE TABLE " + TABLE_USERS + " (" +
+                        COLUMN_UID           + " TEXT PRIMARY KEY, " +
+                        COLUMN_EMAIL         + " TEXT, " +
+                        COLUMN_USERNAME      + " TEXT, " +
+                        COLUMN_AVATAR        + " TEXT, " +
+                        COLUMN_LEVEL         + " INTEGER DEFAULT 0, " +
+                        COLUMN_TITLE         + " TEXT, " +
+                        COLUMN_POWER_POINTS  + " INTEGER DEFAULT 0, " +
+                        COLUMN_XP            + " INTEGER DEFAULT 0, " +
+                        COLUMN_COINS         + " INTEGER DEFAULT 0, " +
+                        COLUMN_BADGES        + " TEXT DEFAULT '', " +
+                        COLUMN_EQUIPPED_ITEMS + " TEXT DEFAULT ''" +
+                        ")";
+        db.execSQL(sql);
         Log.d(TAG, "Table created: " + TABLE_USERS);
     }
 
-    // private void createBadgesTable(SQLiteDatabase db) { ... }
-    // private void createEquipmentTable(SQLiteDatabase db) { ... }
 }

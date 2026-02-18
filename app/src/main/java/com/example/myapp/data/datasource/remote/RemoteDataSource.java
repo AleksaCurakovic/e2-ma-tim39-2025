@@ -7,7 +7,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RemoteDataSource {
@@ -16,6 +15,7 @@ public class RemoteDataSource {
 
     // Firestore kolekcije
     private static final String COLLECTION_USERS = "users";
+    private static final String COLLECTION_CATEGORIES = "categories";
     // private static final String COLLECTION_BADGES = "badges";
     // private static final String COLLECTION_EQUIPMENT = "equipment";
 
@@ -29,6 +29,14 @@ public class RemoteDataSource {
     private static final String FIELD_XP = "xp";
     private static final String FIELD_COINS = "coins";
     private static final String FIELD_BADGES = "badges";
+
+    // ─────────────────────────────────────────
+    // POLJA — CATEGORY
+    // ─────────────────────────────────────────
+    private static final String FIELD_CATEGORY_NAME = "name";
+    private static final String FIELD_CATEGORY_COLOR = "color";
+    private static final String FIELD_CATEGORY_USER_UID = "userUid";
+
 
     private final FirebaseFirestore firestore;
 
@@ -103,17 +111,6 @@ public class RemoteDataSource {
                 });
     }
 
-    // ─────────────────────────────────────────
-    // KADA DODAS NOVU KOLEKCIJU, DODAS OVDE SEKCIJU
-    // ─────────────────────────────────────────
-
-    // public void saveBadge(Badge badge, OnResult<Void> callback) { ... }
-    // public void getBadge(String badgeId, OnResult<Badge> callback) { ... }
-
-    // ─────────────────────────────────────────
-    // HELPER METODE
-    // ─────────────────────────────────────────
-
     private Map<String, Object> userToMap(User user) {
         Map<String, Object> map = new HashMap<>();
         map.put(FIELD_EMAIL, user.getEmail());
@@ -125,6 +122,10 @@ public class RemoteDataSource {
         map.put(FIELD_XP, user.getXp());
         map.put(FIELD_COINS, user.getCoins());
         map.put(FIELD_BADGES, user.getBadges() != null ? user.getBadges() : new ArrayList<>());
+        map.put("equippedItemIds", user.getEquippedItemIds() != null
+                ? user.getEquippedItemIds() : new ArrayList<>());
         return map;
     }
+
+
 }
