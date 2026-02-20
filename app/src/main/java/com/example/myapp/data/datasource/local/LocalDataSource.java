@@ -6,12 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import com.example.myapp.domain.models.Boss;
 import com.example.myapp.domain.models.Task;
 import com.example.myapp.domain.models.User;
 import com.example.myapp.domain.models.Category;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 public class LocalDataSource {
@@ -112,6 +114,10 @@ public class LocalDataSource {
         values.put(DatabaseHelper.COLUMN_POWER_POINTS, user.getPowerPoints());
         values.put(DatabaseHelper.COLUMN_XP, user.getXp());
         values.put(DatabaseHelper.COLUMN_COINS, user.getCoins());
+        values.put(DatabaseHelper.COLUMN_LEVEL_START_TS, user.getLevelStartTimestamp());
+        values.put(DatabaseHelper.COLUMN_LEVEL_END_TS, user.getLevelEndTimestamp());
+        values.put(DatabaseHelper.COLUMN_BOSS_DEFEATED,
+                user.isBossDefeated() ? 1 : 0);
 
         String badgesString = "";
         if (user.getBadges() != null && !user.getBadges().isEmpty()) {
@@ -158,6 +164,12 @@ public class LocalDataSource {
                 badges
         );
         user.setEquippedItemIds(equipped);
+        user.setBossDefeated(cursor.getInt(cursor.getColumnIndexOrThrow(
+                DatabaseHelper.COLUMN_BOSS_DEFEATED)) == 1);
+        user.setLevelStartTimestamp(cursor.getLong(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LEVEL_START_TS)));
+        user.setLevelEndTimestamp(cursor.getLong(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LEVEL_END_TS)));
         return user;
     }
 
@@ -293,17 +305,20 @@ public class LocalDataSource {
     }
 
     // Samo aktivni i pauzirani — za listu
-    public List<Task> getActiveTasksForUser(String userUid) {
+    public List<Task> getUpComingTasksForUser(String userUid) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         List<Task> tasks = new ArrayList<>();
-        long now = System.currentTimeMillis();
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long startOfDay = cal.getTimeInMillis();
+
         Cursor cursor = db.query(DatabaseHelper.TABLE_TASKS, null,
-                DatabaseHelper.COLUMN_TASK_USER_UID + "=? AND (" +
-                        DatabaseHelper.COLUMN_TASK_STATUS + "=? OR " +
-                        DatabaseHelper.COLUMN_TASK_STATUS + "=?) AND " +
+                DatabaseHelper.COLUMN_TASK_USER_UID + "=? AND" +
                         DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " >= ?",
-                new String[]{userUid, Task.STATUS_ACTIVE, Task.STATUS_PAUSED,
-                        String.valueOf(now)},
+                new String[]{userUid, String.valueOf(startOfDay)},
                 null, null, DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " ASC");
         if (cursor != null) {
             while (cursor.moveToNext()) tasks.add(cursorToTask(cursor));
@@ -313,23 +328,6 @@ public class LocalDataSource {
         return tasks;
     }
 
-    // Zadaci za određeni dan — za kalendar
-    public List<Task> getTasksForDay(String userUid, long dayStart, long dayEnd) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        List<Task> tasks = new ArrayList<>();
-        Cursor cursor = db.query(DatabaseHelper.TABLE_TASKS, null,
-                DatabaseHelper.COLUMN_TASK_USER_UID + "=? AND " +
-                        DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " >= ? AND " +
-                        DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " <= ?",
-                new String[]{userUid, String.valueOf(dayStart), String.valueOf(dayEnd)},
-                null, null, DatabaseHelper.COLUMN_TASK_SCHEDULED_TIME + " ASC");
-        if (cursor != null) {
-            while (cursor.moveToNext()) tasks.add(cursorToTask(cursor));
-            cursor.close();
-        }
-        db.close();
-        return tasks;
-    }
 
     public void updateTask(Task task) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -395,6 +393,9 @@ public class LocalDataSource {
         v.put(DatabaseHelper.COLUMN_TASK_REPEAT_END,       task.getRepeatEndDate());
         v.put(DatabaseHelper.COLUMN_TASK_PARENT_ID,        task.getParentTaskId());
         v.put(DatabaseHelper.COLUMN_TASK_RECURRENCE_GROUP, task.getRecurrenceGroupId());
+        v.put(DatabaseHelper.COLUMN_TASK_COMPLETED_AT, task.getCompletedAt());
+        v.put(DatabaseHelper.COLUMN_TASK_VIOLATED_QUOTA,
+                task.isViolatedQuota() ? 1 : 0);
         return v;
     }
 
@@ -416,8 +417,77 @@ public class LocalDataSource {
                 c.getLong(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_REPEAT_START)),
                 c.getLong(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_REPEAT_END)),
                 c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_PARENT_ID)),
-                c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_RECURRENCE_GROUP))
+                c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_RECURRENCE_GROUP)),
+                c.getLong(c.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TASK_COMPLETED_AT)),
+                c.getInt(c.getColumnIndexOrThrow(
+                        DatabaseHelper.COLUMN_TASK_VIOLATED_QUOTA)) == 1
         );
+    }
+
+    // ─────────────────────────────────────────
+    // BOSS METODE
+    // ─────────────────────────────────────────
+
+    public void saveBoss(Boss boss) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.insertWithOnConflict(DatabaseHelper.TABLE_BOSSES, null,
+                bossToContentValues(boss), SQLiteDatabase.CONFLICT_REPLACE);
+        db.close();
+    }
+
+    public void deleteBoss(String bossId) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.delete(DatabaseHelper.TABLE_BOSSES,
+                DatabaseHelper.COLUMN_BOSS_ID + "=?",
+                new String[]{bossId});
+        db.close();
+    }
+
+    // Vraća sve neporažene bosove poređane po levelu
+    public List<Boss> getAllBosses(String userUid) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        List<Boss> bosses = new ArrayList<>();
+        Cursor cursor = db.query(DatabaseHelper.TABLE_BOSSES, null,
+                DatabaseHelper.COLUMN_BOSS_USER_UID + "=?",
+                new String[]{userUid},
+                null, null,
+                DatabaseHelper.COLUMN_BOSS_LEVEL + " ASC");
+        if (cursor != null) {
+            while (cursor.moveToNext()) bosses.add(cursorToBoss(cursor));
+            cursor.close();
+        }
+        db.close();
+        return bosses;
+    }
+
+// ─── Mapiranje ───
+
+    private ContentValues bossToContentValues(Boss boss) {
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.COLUMN_BOSS_ID,           boss.getId());
+        values.put(DatabaseHelper.COLUMN_BOSS_USER_UID,     boss.getUserUid());
+        values.put(DatabaseHelper.COLUMN_BOSS_LEVEL,        boss.getBossLevel());
+        values.put(DatabaseHelper.COLUMN_BOSS_MAX_HP,       boss.getMaxHp());
+        values.put(DatabaseHelper.COLUMN_BOSS_CURRENT_HP,   boss.getCurrentHp());
+        values.put(DatabaseHelper.COLUMN_BOSS_ATTACKS_LEFT, boss.getAttacksLeft());
+        return values;
+    }
+
+    private Boss cursorToBoss(Cursor cursor) {
+        Boss boss = new Boss();
+        boss.setId(cursor.getString(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_ID)));
+        boss.setUserUid(cursor.getString(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_USER_UID)));
+        boss.setBossLevel(cursor.getInt(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_LEVEL)));
+        boss.setMaxHp(cursor.getInt(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_MAX_HP)));
+        boss.setCurrentHp(cursor.getInt(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_CURRENT_HP)));
+        boss.setAttacksLeft(cursor.getInt(
+                cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_BOSS_ATTACKS_LEFT)));
+        return boss;
     }
 
 }

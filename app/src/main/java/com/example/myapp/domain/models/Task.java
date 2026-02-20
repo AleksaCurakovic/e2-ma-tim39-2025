@@ -43,6 +43,8 @@ public class Task {
     private long repeatEndDate;
     private String parentTaskId;
     private String recurrenceGroupId;
+    private long completedAt;
+    private boolean violatedQuota;
 
     public Task() {}
 
@@ -51,7 +53,7 @@ public class Task {
                 int xpValue, long scheduledTime, long createdAt,
                 String repeatType, int repeatInterval,
                 long repeatStartDate, long repeatEndDate,
-                String parentTaskId, String recurrenceGroupId) {
+                String parentTaskId, String recurrenceGroupId, long completedAt, boolean violatedQuota) {
         this.id = id;
         this.userUid = userUid;
         this.title = title;
@@ -69,9 +71,18 @@ public class Task {
         this.repeatEndDate = repeatEndDate;
         this.parentTaskId = parentTaskId;
         this.recurrenceGroupId = recurrenceGroupId;
+        this.completedAt = completedAt;
+        this.violatedQuota = violatedQuota;
     }
 
     // ─── Getters & Setters ───
+
+    public boolean isViolatedQuota() { return violatedQuota; }
+    public void setViolatedQuota(boolean violatedQuota) {
+        this.violatedQuota = violatedQuota;
+    }
+    public long getCompletedAt() { return completedAt; }
+    public void setCompletedAt(long completedAt) { this.completedAt = completedAt; }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

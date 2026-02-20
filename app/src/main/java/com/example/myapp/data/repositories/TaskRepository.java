@@ -31,9 +31,6 @@ public class TaskRepository {
     // ─────────────────────────────────────────
 
     public void createTask(Task task, int userLevel, OnResult<Void> callback) {
-        int xp = XpCalculator.calculateTaskXp(
-                task.getDifficulty(), task.getImportance(), userLevel);
-        task.setXpValue(xp);
         task.setStatus(Task.STATUS_ACTIVE);
         task.setCreatedAt(System.currentTimeMillis());
 
@@ -113,7 +110,9 @@ public class TaskRepository {
                     template.getRepeatStartDate(),
                     template.getRepeatEndDate(),
                     template.getId(),
-                    template.getRecurrenceGroupId()
+                    template.getRecurrenceGroupId(),
+                    0L,
+                    false
             );
             instances.add(instance);
             current += intervalMs;
@@ -125,9 +124,35 @@ public class TaskRepository {
     // ČITANJE
     // ─────────────────────────────────────────
 
+    private List<Task> checkAndMarkExpired(List<Task> tasks) {
+        long now = System.currentTimeMillis();
+        long threeDaysMs = 3L * 24 * 60 * 60 * 1000;
+
+        for (Task task : tasks) {
+            if (!Task.STATUS_ACTIVE.equals(task.getStatus())) continue;
+            if (task.getScheduledTime() > now) continue;
+            if (now - task.getScheduledTime() <= threeDaysMs) continue;
+
+            // Istekao — ažuriraj lokalno i u objektu
+            task.setStatus(Task.STATUS_UNDONE);
+            localDataSource.updateTaskStatus(task.getId(), Task.STATUS_UNDONE);
+            remoteDataSource.updateTaskStatus(task.getId(), Task.STATUS_UNDONE,
+                    new OnResult<Void>() {
+                        @Override public void onSuccess(Void result) {
+                            Log.d(TAG, "Auto-expired: " + task.getId());
+                        }
+                        @Override public void onFailure(Exception e) {
+                            Log.e(TAG, "Failed to sync expired: " + task.getId(), e);
+                        }
+                    });
+            Log.d(TAG, "Task auto-marked undone (expired): " + task.getId());
+        }
+        return tasks;
+    }
+
     // Za kalendar — SVE (uključujući prošle, neurađene, otkazane)
     public List<Task> getAllTasks(String userUid) {
-        return localDataSource.getAllTasksForUser(userUid);
+        return checkAndMarkExpired(localDataSource.getAllTasksForUser(userUid));
     }
 
     // Za listu — samo aktivni i pauzirani (trenutni i budući)
@@ -135,11 +160,7 @@ public class TaskRepository {
     // Pauzirani su vidljivi jer korisnik njima još uvek može upravljati
     // Neurađeni i otkazani su vidljivi SAMO u kalendaru
     public List<Task> getTasksForList(String userUid) {
-        return localDataSource.getActiveTasksForUser(userUid);
-    }
-
-    public List<Task> getTasksForDay(String userUid, long dayStart, long dayEnd) {
-        return localDataSource.getTasksForDay(userUid, dayStart, dayEnd);
+        return localDataSource.getUpComingTasksForUser(userUid);
     }
 
     public Task getTask(String taskId) {
@@ -161,7 +182,7 @@ public class TaskRepository {
 
         if (task.isRepeating() && task.getRecurrenceGroupId() != null) {
             // Spec: samo buduća ponavljanja se menjaju
-            updateFutureRecurringTasks(task, callback);
+            updateFutureRecurringTasks(task, false, callback);
         } else {
             localDataSource.updateTask(task);
             remoteDataSource.updateTask(task, new OnResult<Void>() {
@@ -177,23 +198,27 @@ public class TaskRepository {
         }
     }
 
-    private void updateFutureRecurringTasks(Task task, OnResult<Void> callback) {
-        // Učitaj sve buduće iz grupe lokalno i ažuriraj ih
+    private void updateFutureRecurringTasks(Task task, boolean shiftScheduledTime, OnResult<Void> callback) {
         List<Task> allTasks = localDataSource.getAllTasksForUser(task.getUserUid());
-        long now = System.currentTimeMillis();
 
         for (Task t : allTasks) {
             if (task.getRecurrenceGroupId().equals(t.getRecurrenceGroupId())
-                    && t.getScheduledTime() >= now
                     && t.isEditable()) {
-                // Prenesi izmene — samo polja koja se mogu menjati po spec
+
+                // Ažuriramo polja koja se mogu menjati
                 t.setTitle(task.getTitle());
                 t.setDescription(task.getDescription());
                 t.setDifficulty(task.getDifficulty());
                 t.setImportance(task.getImportance());
                 t.setXpValue(task.getXpValue());
-                // Napomena: scheduledTime se ne propagira na ostale
-                // jer svaki ima svoje vreme u seriji
+                t.setStatus(task.getStatus());
+
+                // Ako aktiviramo, pomeramo scheduledTime
+                if (shiftScheduledTime) {
+                    long newScheduledTime = System.currentTimeMillis() + task.getRepeatInterval();
+                    t.setScheduledTime(newScheduledTime);
+                }
+
                 localDataSource.updateTask(t);
             }
         }
@@ -202,7 +227,7 @@ public class TaskRepository {
         remoteDataSource.updateFutureRecurringTasks(
                 task.getUserUid(),
                 task.getRecurrenceGroupId(),
-                task, now, new OnResult<Void>() {
+                task, shiftScheduledTime, new OnResult<Void>() {
                     @Override public void onSuccess(Void result) {
                         Log.d(TAG, "Future recurring tasks updated");
                         if (callback != null) callback.onSuccess(null);
@@ -267,7 +292,7 @@ public class TaskRepository {
     // ─────────────────────────────────────────
 
     // Vraća XP koji treba dodati (0 ako nije validno)
-    public int markDone(Task task, OnResult<Void> callback) {
+    public int markDone(Task task, String userId, OnResult<Void> callback) {
         if (!task.canBeMarked()) {
             if (callback != null)
                 callback.onFailure(new Exception("TASK_NOT_ACTIVE"));
@@ -286,20 +311,15 @@ public class TaskRepository {
 
         // Ne sme biti stariji od 3 dana — automatski postaje neurađen
         if (now - task.getScheduledTime() > threeDaysMs) {
-            markUndone(task, new OnResult<Void>() {
-                @Override public void onSuccess(Void result) {
-                    Log.d(TAG, "Task auto-marked undone (expired): " + task.getId());
-                }
-                @Override public void onFailure(Exception e) {
-                    Log.e(TAG, "Failed to auto-mark undone", e);
-                }
-            });
             if (callback != null)
                 callback.onFailure(new Exception("TASK_EXPIRED"));
             return 0;
         }
-
+        int userLevel = localDataSource.getUser(userId).getLevel();
+        List<Task> allTasks = localDataSource.getAllTasksForUser(userId);
+        int xp = XpCalculator.calculateTaskXp(task, userLevel, allTasks);
         task.setStatus(Task.STATUS_DONE);
+        task.setCompletedAt(System.currentTimeMillis());
         localDataSource.updateTaskStatus(task.getId(), Task.STATUS_DONE);
         remoteDataSource.updateTaskStatus(task.getId(), Task.STATUS_DONE, new OnResult<Void>() {
             @Override public void onSuccess(Void result) {
@@ -312,7 +332,8 @@ public class TaskRepository {
             }
         });
 
-        return task.getXpValue();
+
+        return xp;
     }
 
     // Spec: otkazano = rešavanje onemogućeno ne korisnikovom krivicom
@@ -350,8 +371,7 @@ public class TaskRepository {
             return;
         }
         task.setStatus(Task.STATUS_PAUSED);
-        localDataSource.updateTaskStatus(task.getId(), Task.STATUS_PAUSED);
-        remoteDataSource.updateTaskStatus(task.getId(), Task.STATUS_PAUSED, new OnResult<Void>() {
+        updateFutureRecurringTasks(task, false,new OnResult<Void>() {
             @Override public void onSuccess(Void result) {
                 Log.d(TAG, "Task paused: " + task.getId());
                 if (callback != null) callback.onSuccess(null);
@@ -370,18 +390,17 @@ public class TaskRepository {
                 callback.onFailure(new Exception("TASK_NOT_PAUSED"));
             return;
         }
-        long originalInterval = task.getRepeatEndDate() - task.getScheduledTime();
-        long newScheduledTime = System.currentTimeMillis() + originalInterval;
+
+        long newScheduledTime = System.currentTimeMillis() + task.getRepeatInterval();
         task.setScheduledTime(newScheduledTime);
         task.setStatus(Task.STATUS_ACTIVE);
-        localDataSource.updateTaskStatus(task.getId(), Task.STATUS_ACTIVE);
-        remoteDataSource.updateTaskStatus(task.getId(), Task.STATUS_ACTIVE, new OnResult<Void>() {
+        updateFutureRecurringTasks(task, true, new OnResult<Void>() {
             @Override public void onSuccess(Void result) {
-                Log.d(TAG, "Task activated: " + task.getId());
+                Log.d(TAG, "Task paused: " + task.getId());
                 if (callback != null) callback.onSuccess(null);
             }
             @Override public void onFailure(Exception e) {
-                Log.e(TAG, "Failed to activate task", e);
+                Log.e(TAG, "Failed to pause task", e);
                 if (callback != null) callback.onFailure(e);
             }
         });

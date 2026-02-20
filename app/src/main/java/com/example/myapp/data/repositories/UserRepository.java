@@ -8,6 +8,7 @@ import com.example.myapp.data.datasource.remote.OnResult;
 import com.example.myapp.data.datasource.remote.RemoteDataSource;
 import com.example.myapp.domain.models.User;
 import com.example.myapp.domain.utils.LevelManager;
+import com.example.myapp.domain.utils.XpCalculator;
 
 public class UserRepository {
 
@@ -161,25 +162,19 @@ public class UserRepository {
                 callback.onSuccess(new LevelUpResult(false, user.getLevel(), 0));
             return;
         }
-
-        // Može biti više level upova odjednom
-        int currentLevel = user.getLevel();
-        while (LevelManager.checkLevelUp(user.getXp(), currentLevel) != -1) {
-            currentLevel++;
-            Log.d(TAG, "Level up to: " + currentLevel);
-        }
-
-        String title = LevelManager.titleForLevel(currentLevel);
-        user.setLevel(currentLevel);
+        user.setLevelStartTimestamp(user.getLevelEndTimestamp());
+        user.setLevelEndTimestamp(System.currentTimeMillis());
+        String title = LevelManager.titleForLevel(newLevel);
+        user.setLevel(newLevel);
         user.setTitle(title);
-
-        final int finalLevel = currentLevel;
+        int pp =  LevelManager.ppRewardForLevel(newLevel);
+        user.setPowerPoints(user.getPowerPoints() + pp);
 
         updateUser(user, new OnResult<Void>() {
             @Override public void onSuccess(Void result) {
-                Log.d(TAG, "Level up saved! Level: " + finalLevel);
+                Log.d(TAG, "Level up saved! Level: " + newLevel);
                 if (callback != null)
-                    callback.onSuccess(new LevelUpResult(true, finalLevel, 0));
+                    callback.onSuccess(new LevelUpResult(true, newLevel, pp));
             }
             @Override public void onFailure(Exception e) {
                 Log.e(TAG, "Failed to save level up", e);

@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.myapp.data.datasource.remote.OnResult;
+import com.example.myapp.data.repositories.BossRepository;
 import com.example.myapp.data.repositories.CategoryRepository;
 import com.example.myapp.data.repositories.TaskRepository;
 import com.example.myapp.data.repositories.UserRepository;
@@ -22,6 +23,8 @@ public class TaskViewModel extends ViewModel {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
+    private final BossRepository bossRepository;
+
     public MutableLiveData<List<Task>>     tasks          = new MutableLiveData<>();
     public MutableLiveData<List<Category>> categories     = new MutableLiveData<>();
     public MutableLiveData<Task>           selectedTask   = new MutableLiveData<>();
@@ -36,6 +39,7 @@ public class TaskViewModel extends ViewModel {
         taskRepository     = new TaskRepository(context);
         userRepository     = new UserRepository(context);
         categoryRepository = new CategoryRepository(context);
+        bossRepository = new BossRepository(context);
     }
 
     // ─────────────────────────────────────────
@@ -131,7 +135,7 @@ public class TaskViewModel extends ViewModel {
     // ─────────────────────────────────────────
 
     public void markDone(Task task, String userUid) {
-        int xp = taskRepository.markDone(task, new OnResult<Void>() {
+        int xp = taskRepository.markDone(task, userUid, new OnResult<Void>() {
             @Override public void onSuccess(Void result) {
                 loadAllTasks(userUid);
             }
@@ -217,6 +221,22 @@ public class TaskViewModel extends ViewModel {
                                 @Override
                                 public void onSuccess(UserRepository.LevelUpResult result) {
                                     if (result.leveledUp) {
+                                        bossRepository.createBossForLevel(
+                                                userUid,
+                                                result.newLevel,
+                                                new OnResult<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void r) {
+                                                        Log.d("TaskViewModel",
+                                                                "Boss created for level: "
+                                                                        + result.newLevel);
+                                                    }
+                                                    @Override
+                                                    public void onFailure(Exception e) {
+                                                        Log.e("TaskViewModel",
+                                                                "Failed to create boss", e);
+                                                    }
+                                                });
                                         levelUpOccurred.postValue(result);
                                     }
                                 }

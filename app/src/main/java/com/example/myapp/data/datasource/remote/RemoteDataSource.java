@@ -2,11 +2,13 @@ package com.example.myapp.data.datasource.remote;
 
 import android.util.Log;
 
+import com.example.myapp.domain.models.Boss;
 import com.example.myapp.domain.models.Task;
 import com.example.myapp.domain.models.User;
 import com.example.myapp.domain.models.Category;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
@@ -36,6 +38,10 @@ public class RemoteDataSource {
     private static final String FIELD_COINS = "coins";
     private static final String FIELD_BADGES = "badges";
     private static final String FIELD_EQUIPPED_ITEMS = "equipped_items";
+    private static final String FIELD_LEVEL_START_TS = "level_start_timestamp";
+    private static final String FIELD_LEVEL_END_TS = "level_end_timestamp";
+
+    private static final String FIELD_BOSS_DEFEATED = "boss_defeated";
 
     // ─────────────────────────────────────────
     // POLJA — CATEGORY
@@ -63,6 +69,18 @@ public class RemoteDataSource {
     private static final String FIELD_TASK_REPEAT_END = "repeat_end";
     private static final String FIELD_TASK_PARENT_ID  = "parent_task_id";
     private static final String FIELD_TASK_RECURRENCE_GROUP = "recurrence_group_id";
+
+    private static final String FIELD_TASK_COMPLETED_AT = "completed_at";
+
+    private static final String FIELD_TASK_VIOLATED_QUOTA = "counted_for_xp";
+
+
+    private static final String COLLECTION_BOSSES = "bosses";
+    private static final String FIELD_BOSS_USER_UID    = "user_uid";
+    private static final String FIELD_BOSS_LEVEL       = "boss_level";
+    private static final String FIELD_BOSS_MAX_HP      = "max_hp";
+    private static final String FIELD_BOSS_CURRENT_HP  = "current_hp";
+    private static final String FIELD_BOSS_ATTACKS_LEFT = "attacks_left";
 
 
     private final FirebaseFirestore firestore;
@@ -151,6 +169,9 @@ public class RemoteDataSource {
         map.put(FIELD_BADGES, user.getBadges() != null ? user.getBadges() : new ArrayList<>());
         map.put(FIELD_EQUIPPED_ITEMS, user.getEquippedItemIds() != null
                 ? user.getEquippedItemIds() : new ArrayList<>());
+        map.put(FIELD_LEVEL_START_TS, user.getLevelStartTimestamp());
+        map.put(FIELD_LEVEL_END_TS, user.getLevelEndTimestamp());
+        map.put(FIELD_BOSS_DEFEATED, user.isBossDefeated());
         return map;
     }
 
@@ -328,14 +349,14 @@ public class RemoteDataSource {
     public void deleteFutureRecurringTasks(String userUid, String groupId,
                                            long fromTime, OnResult<Void> callback) {
         firestore.collection(COLLECTION_TASKS)
-                .whereEqualTo("userUid", userUid)
-                .whereEqualTo("recurrenceGroupId", groupId)
-                .whereGreaterThanOrEqualTo("scheduledTime", fromTime)
+                .whereEqualTo(FIELD_TASK_USER_UID, userUid)
+                .whereEqualTo(FIELD_TASK_RECURRENCE_GROUP, groupId)
+                .whereGreaterThanOrEqualTo(FIELD_TASK_SCHEDULED_TIME, fromTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     WriteBatch batch = firestore.batch();
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        String status = doc.getString("status");
+                        String status = doc.getString(FIELD_TASK_STATUS);
                         if (Task.STATUS_ACTIVE.equals(status)
                                 || Task.STATUS_PAUSED.equals(status)) {
                             batch.delete(doc.getReference());
@@ -354,28 +375,38 @@ public class RemoteDataSource {
                 });
     }
 
-    public void updateFutureRecurringTasks(String userUid, String groupId,
-                                           Task changes, long fromTime,
+    public void updateFutureRecurringTasks(String userUid,
+                                           String groupId,
+                                           Task changes,
+                                           boolean shiftScheduledTime,
                                            OnResult<Void> callback) {
+
         firestore.collection(COLLECTION_TASKS)
                 .whereEqualTo(FIELD_TASK_USER_UID, userUid)
                 .whereEqualTo(FIELD_TASK_RECURRENCE_GROUP, groupId)
-                .whereGreaterThanOrEqualTo(FIELD_TASK_SCHEDULED_TIME, fromTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     WriteBatch batch = firestore.batch();
+                    long newScheduledTime = System.currentTimeMillis() + changes.getRepeatInterval();
+
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
                         String status = doc.getString(FIELD_TASK_STATUS);
+
                         // Samo editable taskove menjamo
-                        if (Task.STATUS_ACTIVE.equals(status)
-                                || Task.STATUS_PAUSED.equals(status)) {
-                            batch.update(doc.getReference(), FIELD_TASK_TITLE,       changes.getTitle());
-                            batch.update(doc.getReference(), FIELD_TASK_DESCRIPTION,  changes.getDescription());
-                            batch.update(doc.getReference(), FIELD_TASK_DIFFICULTY,   changes.getDifficulty());
-                            batch.update(doc.getReference(), FIELD_TASK_IMPORTANCE,   changes.getImportance());
-                            batch.update(doc.getReference(),  FIELD_TASK_XP_VALUE     ,changes.getXpValue());
+                        if (Task.STATUS_ACTIVE.equals(status) || Task.STATUS_PAUSED.equals(status)) {
+                            batch.update(doc.getReference(), FIELD_TASK_TITLE, changes.getTitle());
+                            batch.update(doc.getReference(), FIELD_TASK_DESCRIPTION, changes.getDescription());
+                            batch.update(doc.getReference(), FIELD_TASK_DIFFICULTY, changes.getDifficulty());
+                            batch.update(doc.getReference(), FIELD_TASK_IMPORTANCE, changes.getImportance());
+                            batch.update(doc.getReference(), FIELD_TASK_XP_VALUE, changes.getXpValue());
+                            batch.update(doc.getReference(), FIELD_TASK_STATUS, changes.getStatus());
+
+                            if (shiftScheduledTime) {
+                                batch.update(doc.getReference(), FIELD_TASK_SCHEDULED_TIME, newScheduledTime);
+                            }
                         }
                     }
+
                     batch.commit()
                             .addOnSuccessListener(v -> {
                                 if (callback != null) callback.onSuccess(null);
@@ -409,6 +440,8 @@ public class RemoteDataSource {
         map.put(FIELD_TASK_REPEAT_END, task.getRepeatEndDate());
         map.put(FIELD_TASK_PARENT_ID, task.getParentTaskId());
         map.put(FIELD_TASK_RECURRENCE_GROUP, task.getRecurrenceGroupId());
+        map.put(FIELD_TASK_VIOLATED_QUOTA, task.isViolatedQuota());
+        map.put(FIELD_TASK_COMPLETED_AT, task.getCompletedAt());
         return map;
     }
 
@@ -438,12 +471,94 @@ public class RemoteDataSource {
                     doc.getLong(FIELD_TASK_REPEAT_END) != null
                             ? doc.getLong(FIELD_TASK_REPEAT_END) : 0,
                     doc.getString(FIELD_TASK_PARENT_ID),
-                    doc.getString(FIELD_TASK_RECURRENCE_GROUP)
+                    doc.getString(FIELD_TASK_RECURRENCE_GROUP),
+                    doc.getLong(FIELD_TASK_COMPLETED_AT) != null ?
+                            doc.getLong(FIELD_TASK_COMPLETED_AT) : 0L,
+                    doc.getBoolean(FIELD_TASK_VIOLATED_QUOTA) != null
+                            ? doc.getBoolean(FIELD_TASK_VIOLATED_QUOTA) : false
             );
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse task document: " + doc.getId(), e);
             return null;
         }
+    }
+
+    public void saveBoss(Boss boss, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_BOSSES)
+                .document(boss.getId())
+                .set(bossToMap(boss))
+                .addOnSuccessListener(v -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void updateBoss(Boss boss, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_BOSSES)
+                .document(boss.getId())
+                .set(bossToMap(boss))
+                .addOnSuccessListener(v -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void deleteBoss(String bossId, OnResult<Void> callback) {
+        firestore.collection(COLLECTION_BOSSES)
+                .document(bossId)
+                .delete()
+                .addOnSuccessListener(v -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    public void getBossesForUser(String userUid, OnResult<List<Boss>> callback) {
+        firestore.collection(COLLECTION_BOSSES)
+                .whereEqualTo(FIELD_BOSS_USER_UID, userUid)
+                .orderBy(FIELD_BOSS_LEVEL, Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Boss> bosses = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        bosses.add(documentToBoss(doc));
+                    }
+                    if (callback != null) callback.onSuccess(bosses);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
+    private Map<String, Object> bossToMap(Boss boss) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(FIELD_BOSS_USER_UID,     boss.getUserUid());
+        map.put(FIELD_BOSS_LEVEL,   boss.getBossLevel());
+        map.put(FIELD_BOSS_MAX_HP,       boss.getMaxHp());
+        map.put(FIELD_BOSS_CURRENT_HP,   boss.getCurrentHp());
+        map.put(FIELD_BOSS_ATTACKS_LEFT, boss.getAttacksLeft());
+        return map;
+    }
+
+    private Boss documentToBoss(DocumentSnapshot doc) {
+        Boss boss = new Boss();
+        boss.setId(doc.getId());
+        boss.setUserUid(doc.getString(FIELD_BOSS_USER_UID));
+        boss.setBossLevel(doc.getLong(FIELD_BOSS_LEVEL) != null
+                ? doc.getLong(FIELD_BOSS_LEVEL).intValue() : 0);
+        boss.setMaxHp(doc.getLong(FIELD_BOSS_MAX_HP) != null
+                ? doc.getLong(FIELD_BOSS_MAX_HP).intValue() : 0);
+        boss.setCurrentHp(doc.getLong(FIELD_BOSS_CURRENT_HP) != null
+                ? doc.getLong(FIELD_BOSS_CURRENT_HP).intValue() : 0);
+        boss.setAttacksLeft(doc.getLong(FIELD_BOSS_ATTACKS_LEFT) != null
+                ? doc.getLong(FIELD_BOSS_ATTACKS_LEFT).intValue() : 0);
+        return boss;
     }
 
 }

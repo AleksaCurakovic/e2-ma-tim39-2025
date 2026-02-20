@@ -35,6 +35,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_COINS = "coins";
     public static final String COLUMN_BADGES = "badges";
     public static final String COLUMN_EQUIPPED_ITEMS = "equipped_items";
+    public static final String COLUMN_LEVEL_START_TS = "level_start_timestamp";
+
+    public static final String COLUMN_LEVEL_END_TS = "level_end_timestamp";
+    public static final String COLUMN_BOSS_DEFEATED = "boss_defeated";
 
 
     //TABELA: CATEGORIES
@@ -63,6 +67,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TASK_REPEAT_END = "repeat_end";
     public static final String COLUMN_TASK_PARENT_ID  = "parent_task_id";
     public static final String COLUMN_TASK_RECURRENCE_GROUP = "recurrence_group_id";
+    public static final String COLUMN_TASK_COMPLETED_AT = "completed_at";
+
+    public static final String COLUMN_TASK_VIOLATED_QUOTA = "counted_for_xp";
+
+
+    // ─── Boss tabela ───
+    public static final String TABLE_BOSSES            = "bosses";
+    public static final String COLUMN_BOSS_ID          = "id";
+    public static final String COLUMN_BOSS_USER_UID    = "user_uid";
+    public static final String COLUMN_BOSS_LEVEL       = "boss_level";
+    public static final String COLUMN_BOSS_MAX_HP      = "max_hp";
+    public static final String COLUMN_BOSS_CURRENT_HP  = "current_hp";
+    public static final String COLUMN_BOSS_ATTACKS_LEFT = "attacks_left";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -76,6 +93,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createUsersTable(db);
         createCategoryTable(db);
         createTaskTable(db);
+        createBossTable(db);
         Log.d(TAG, "Database created - version: " + DATABASE_VERSION);
     }
 
@@ -103,16 +121,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_XP            + " INTEGER DEFAULT 0, " +
                         COLUMN_COINS         + " INTEGER DEFAULT 0, " +
                         COLUMN_BADGES        + " TEXT DEFAULT '', " +
-                        COLUMN_EQUIPPED_ITEMS + " TEXT DEFAULT ''" +
-                        ")";
+                        COLUMN_EQUIPPED_ITEMS + " TEXT DEFAULT ''," +
+                        COLUMN_LEVEL_START_TS + " INTEGER DEFAULT 0, " +
+                        COLUMN_LEVEL_END_TS + " INTEGER DEFAULT 0, " +
+                        COLUMN_BOSS_DEFEATED + "INTEGER DEFAULT 0" + ")";
         db.execSQL(sql);
         Log.d(TAG, "Table created: " + TABLE_USERS);
     }
 
     private void createCategoryTable(SQLiteDatabase db){
-//        String sql;
-//
-//        db.execSQL(sql);
+        String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_CATEGORIES + " ("
+                + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + COLUMN_CATEGORY_USER_UID + " TEXT NOT NULL, "
+                + COLUMN_CATEGORY_NAME + " TEXT NOT NULL, "
+                + COLUMN_CATEGORY_COLOR + " TEXT"
+                + ");";
+
+        db.execSQL(sql);
         Log.d(TAG, "Table created: " + TABLE_CATEGORIES);
     }
 
@@ -135,10 +160,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_TASK_REPEAT_START     + " INTEGER DEFAULT 0, " +
                         COLUMN_TASK_REPEAT_END       + " INTEGER DEFAULT 0, " +
                         COLUMN_TASK_PARENT_ID        + " TEXT, " +
-                        COLUMN_TASK_RECURRENCE_GROUP + " TEXT" +
+                        COLUMN_TASK_RECURRENCE_GROUP + " TEXT," +
+                        COLUMN_TASK_VIOLATED_QUOTA + " INTEGER DEFAULT 0," +
+                        COLUMN_TASK_COMPLETED_AT + " INTEGER DEFAULT 0" +
                         ")";
         db.execSQL(sql);
         Log.d(TAG, "Table created: " + TABLE_TASKS);
+    }
+
+    private void createBossTable(SQLiteDatabase db){
+        String sql =
+                "CREATE TABLE " + TABLE_BOSSES + " (" +
+                        COLUMN_BOSS_ID           + " TEXT PRIMARY KEY, " +
+                        COLUMN_BOSS_USER_UID     + " TEXT NOT NULL, " +
+                        COLUMN_BOSS_LEVEL        + " INTEGER NOT NULL, " +
+                        COLUMN_BOSS_MAX_HP       + " INTEGER NOT NULL, " +
+                        COLUMN_BOSS_CURRENT_HP   + " INTEGER NOT NULL, " +
+                        COLUMN_BOSS_ATTACKS_LEFT + " INTEGER NOT NULL " +
+                        ")";
+        db.execSQL(sql);
+        Log.d(TAG, "Table created: " + TABLE_BOSSES);
     }
 
 }

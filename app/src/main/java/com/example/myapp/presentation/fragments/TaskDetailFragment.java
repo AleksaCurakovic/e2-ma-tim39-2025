@@ -87,6 +87,11 @@ public class TaskDetailFragment extends Fragment {
                     Toast.makeText(requireContext(),
                             "Završeni zadaci se ne mogu brisati", Toast.LENGTH_SHORT).show();
                     break;
+
+                default:
+                    Toast.makeText(requireContext(),
+                            "Desila se greska u izmeni", Toast.LENGTH_SHORT).show();
+                    break;
             }
         });
     }

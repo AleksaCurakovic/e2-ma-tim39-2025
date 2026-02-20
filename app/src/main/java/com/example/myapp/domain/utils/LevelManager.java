@@ -45,20 +45,13 @@ public class LevelManager {
         return (int) Math.round(pp);
     }
 
-    // ─────────────────────────────────────────
-    // XP ZA ZADATAK — delegira na XpCalculator
-    // ─────────────────────────────────────────
-
-    public static int calculateTaskXp(String difficulty, String importance, int userLevel) {
-        return XpCalculator.calculateTaskXp(difficulty, importance, userLevel);
-    }
 
     // ─────────────────────────────────────────
     // TITULA ZA NIVO
     // ─────────────────────────────────────────
 
     public static String titleForLevel(int level) {
-        return TITLES[min(level - 1, level)];
+        return TITLES[min(level - 1, TITLES.length - 1)];
     }
 
     // ─────────────────────────────────────────

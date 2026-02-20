@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A2E">
+
+    <!-- ─── BORBA ─── -->
+    <ScrollView
+        android:id="@+id/layoutBattle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:gravity="center_horizontal">
+
+            <!-- Boss slika -->
+            <ImageView
+                android:id="@+id/imgBoss"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:src="@drawable/scp173"
+                android:layout_marginBottom="16dp"
+                android:contentDescription="Boss"/>
+
+            <!-- Boss HP -->
+            <TextView
+                android:id="@+id/tvBossHp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"/>
+
+            <ProgressBar
+                android:id="@+id/progressBossHp"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="#F44336"
+                android:progressBackgroundTint="#4D0000"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- User PP -->
+            <TextView
+                android:id="@+id/tvUserPp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"/>
+
+            <ProgressBar
+                android:id="@+id/progressUserPp"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="#2196F3"
+                android:progressBackgroundTint="#00004D"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Info red -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/tvSuccessRate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#FFD700"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/tvAttacksLeft"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:gravity="end"/>
+
+            </LinearLayout>
+
+            <!-- Rezultat napada -->
+            <TextView
+                android:id="@+id/tvAttackResult"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:visibility="invisible"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Dugme za napad -->
+            <Button
+                android:id="@+id/btnAttack"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:text="⚔ NAPADNI!"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:backgroundTint="#F44336"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ili protresaj telefon"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ─── REZULTAT ─── -->
+    <LinearLayout
+        android:id="@+id/layoutResult"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp"
+        android:background="#1A1A2E"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvResultTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <ImageView
+            android:id="@+id/imgChest"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:src="@drawable/closed_chest"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Kovčeg"/>
+
+        <TextView
+            android:id="@+id/tvShakeHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Protresaj telefon da otvoriš kovčeg!"
+            android:textColor="#888888"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:id="@+id/tvResultCoins"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="28sp"
+            android:textColor="#FFD700"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/tvResultEquipment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textColor="#4CAF50"
+            android:visibility="gone"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnClose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Zatvori"
+            android:backgroundTint="#333355"/>
+
+    </LinearLayout>
+
+</FrameLayout>

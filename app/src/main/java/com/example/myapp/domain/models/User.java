@@ -15,6 +15,10 @@ public class User {
     private int powerPoints;
     private int xp;
     private int coins;
+    private boolean bossDefeated;
+    private long levelStartTimestamp;
+
+    private long levelEndTimestamp;
     private List<String> badges;
     private List<String> equippedItemIds;
 
@@ -36,12 +40,26 @@ public class User {
     }
 
     // ─── Getters & Setters ───
+    public long getLevelEndTimestamp() { return levelEndTimestamp; }
+    public void setLevelEndTimestamp(long levelEndTimestamp) {
+        this.levelEndTimestamp = levelEndTimestamp;
+    }
+    public boolean isBossDefeated() { return bossDefeated; }
+    public void setBossDefeated(boolean bossDefeated) { this.bossDefeated = bossDefeated; }
 
     public String getUid() { return uid; }
     public void setUid(String uid) { this.uid = uid; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public long getLevelStartTimestamp() {
+        return levelStartTimestamp;
+    }
+
+    public void setLevelStartTimestamp(long levelStartTimestamp) {
+        this.levelStartTimestamp = levelStartTimestamp;
+    }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }

@@ -89,15 +89,15 @@ public class CreateTaskFragment extends Fragment {
     private void setupSpinners() {
         ArrayAdapter<String> diffAdapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_item,
-                new String[]{"Veoma lak (1 XP)", "Lak (3 XP)",
-                        "Težak (7 XP)", "Ekstremno težak (20 XP)"});
+                new String[]{"Veoma lak", "Lak",
+                        "Težak", "Ekstremno težak"});
         diffAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDifficulty.setAdapter(diffAdapter);
 
         ArrayAdapter<String> impAdapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_item,
-                new String[]{"Normalan (1 XP)", "Važan (3 XP)",
-                        "Ekstremno važan (10 XP)", "Specijalan (100 XP)"});
+                new String[]{"Normalan", "Važan",
+                        "Ekstremno važan", "Specijalan"});
         impAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerImportance.setAdapter(impAdapter);
     }
@@ -221,7 +221,9 @@ public class CreateTaskFragment extends Fragment {
                 repeatStart,
                 repeatEnd,
                 null,
-                null
+                null,
+                0L,
+                false
         );
 
         viewModel.createTask(task, userUid);
